@@ -158,7 +158,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		AcceptEntityInput(proxy, "CallScriptFunction", client, client);
 		int show = GetEntProp(proxy, Prop_Data, "m_iHammerID");
 		if (show == 1)
-			return Plugin_Handled;
+			return Plugin_Stop; // предотвращаем вызов OnClientSayCommand_Post, который прослушивает Source-Chat-Relay
 	}
 	
 	return Plugin_Continue;
