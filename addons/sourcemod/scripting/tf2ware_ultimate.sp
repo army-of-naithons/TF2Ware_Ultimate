@@ -60,7 +60,7 @@ bool ShouldEnable()
 
 Action ListenerCheatCommand(int client, const char[] command, int argc)
 {
-	if (!ware_cheats.BoolValue && client > 0)	
+	if (!ware_cheats.BoolValue && client > 0)
 	{
 		if (ware_log_cheats.BoolValue)
 		{
@@ -81,8 +81,8 @@ Action ListenerCheatCommandArgs(int client, const char[] command, int argc)
 		{
 			char name[MAX_NAME_LENGTH];
 			GetClientName(client, name, sizeof(name));
-			LogMessage("Client '%s' attempted to execute cheat command '%s'", name, command);	
-		}		
+			LogMessage("Client '%s' attempted to execute cheat command '%s'", name, command);
+		}
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -96,7 +96,7 @@ public Action ListenerVScript(Event event, const char[] name, bool dontBroadcast
 	{
 		char routine[64];
 		event.GetString("routine", routine, sizeof(routine), "");
-		
+
 		if (StrEqual(routine, "timescale"))
 		{
 			host_timescale.SetFloat(event.GetFloat("value", 1.0), true, false);
@@ -119,28 +119,28 @@ public Action ListenerVScript(Event event, const char[] name, bool dontBroadcast
 			{
 				g_AntiFloodValue = sm_flood_time.FloatValue;
 				sm_flood_time.SetFloat(-1.0);
-			}	
-		}	
+			}
+		}
 		else if (StrEqual(routine, "flood_on"))
 		{
 			if (sm_flood_time != INVALID_HANDLE)
 			{
 				sm_flood_time.SetFloat(g_AntiFloodValue);
 			}
-		}	
+		}
 		else
 		{
 			//LogMessage("Unknown VScript routine '%s'", routine);
 		}
-		
+
 		return Plugin_Handled;
 	}
-	
+
 	return Plugin_Continue;
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
-{	
+{
 	int proxy = EntRefToEntIndex(g_TextProxy);
 	if (proxy == INVALID_ENT_REFERENCE)
 	{
@@ -148,7 +148,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		if (proxy != -1)
 			g_TextProxy = EntIndexToEntRef(proxy);
 	}
-	
+
 	if (IsValidEntity(proxy))
 	{
 		// ask vscript whether to hide the message
@@ -160,7 +160,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 		if (show == 1)
 			return Plugin_Stop; // предотвращаем вызов OnClientSayCommand_Post, который прослушивает Source-Chat-Relay
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -180,18 +180,18 @@ void Enable()
 	if (g_Enabled || !ShouldEnable())
 		return;
 	g_Enabled = true;
-	
+
 	LogMessage("Enabling...");
-	
+
 #if LOADOUT_WHITELISTER
 	GameData gamedata = LoadGameConfigFile("tf2ware_ultimate");
-	if (gamedata)	
+	if (gamedata)
 	{
 		LoadoutWhitelister_Start(gamedata);
 	}
 	else
 	{
-		LogError("Failed to retrieve 'tf2ware_ultimate' gamedata, loadout caching will be unavailable");	
+		LogError("Failed to retrieve 'tf2ware_ultimate' gamedata, loadout caching will be unavailable");
 	}
 	delete gamedata;
 #endif
@@ -200,13 +200,13 @@ void Enable()
 	vscript_perf_warning_spew_ms = FindConVar("vscript_perf_warning_spew_ms");
 	sv_cheats = FindConVar("sv_cheats");
 	sm_flood_time = FindConVar("sm_flood_time");
-	
+
 	// incase a faulty plugin removes replicated flag, make sure to restore it
 	host_timescale.Flags = host_timescale.Flags | FCVAR_REPLICATED;
 	host_timescale.SetFloat(1.0, true, false);
 	sv_cheats.Flags = sv_cheats.Flags | FCVAR_REPLICATED;
 	sv_cheats.SetInt(1, true, false);
-	
+
 	// bump this because loading minigames from disk frequently takes a few ms and clogs the log
 	// ficool2: perf warnings during ontakedamage callback can cause VM crashes, bumped to a Big number now
 	float minWarningMs = 3000.0;
@@ -215,56 +215,56 @@ void Enable()
 		g_ScriptPerfValue = vscript_perf_warning_spew_ms.FloatValue;
 		vscript_perf_warning_spew_ms.SetFloat(minWarningMs, false, false);
 	}
-	
+
 	HookConVarChange(sv_cheats, OnCheatsChanged);
-	
+
 	CreateConVar("ware_version", PLUGIN_VERSION, "TF2Ware Ultimate plugin version");
 	ware_cheats = CreateConVar("ware_cheats", "0", "Enable sv_cheats commands");
 	ware_log_cheats = CreateConVar("ware_log_cheats", "1", "Log cheat command attempts");
-	
+
 	// unused event repurposed for vscript <-> sourcemod communication
 	HookEvent(PROXY_EVENT, ListenerVScript, EventHookMode_Pre);
-	
+
 	HookUserMessage(GetUserMessageId("VoiceSubtitle"), HookVoiceCommand, true);
 
 	char name[64];
 	char description[128];
 	bool is_command;
 	int flags;
-	
+
 	Handle hConCommandIter = FindFirstConCommand(name, sizeof(name), is_command, flags, description, sizeof(description));
-	do 
+	do
 	{
 		if (is_command && (flags & FCVAR_CHEAT))
-		{	
+		{
 			AddCommandListener(ListenerCheatCommand, name);
 			g_CheatCommands.PushString(name);
 		}
-	} 
+	}
 	while ( FindNextConCommand(hConCommandIter, name, sizeof(name), is_command, flags, description, sizeof(description)));
-	
+
 	// special cases
-	g_CheatCommands.PushString("give");	
+	g_CheatCommands.PushString("give");
 	g_CheatCommands.PushString("te");
-	g_CheatCommands.PushString("addcond");	
-	g_CheatCommands.PushString("removecond");	
-	g_CheatCommands.PushString("mp_playgesture");	
-	g_CheatCommands.PushString("mp_playanimation");	
-	for (int i = 0; i < g_CheatCommands.Length; i++)	
-	{		
+	g_CheatCommands.PushString("addcond");
+	g_CheatCommands.PushString("removecond");
+	g_CheatCommands.PushString("mp_playgesture");
+	g_CheatCommands.PushString("mp_playanimation");
+	for (int i = 0; i < g_CheatCommands.Length; i++)
+	{
 		g_CheatCommands.GetString(i, name, sizeof(name));
 		AddCommandListener(ListenerCheatCommand, name);
 	}
-	
-	g_CheatCommandsArgs.PushString("kill");	
-	g_CheatCommandsArgs.PushString("explode");	
-	g_CheatCommandsArgs.PushString("fov");		
-	for (int i = 0; i < g_CheatCommandsArgs.Length; i++)	
-	{		
+
+	g_CheatCommandsArgs.PushString("kill");
+	g_CheatCommandsArgs.PushString("explode");
+	g_CheatCommandsArgs.PushString("fov");
+	for (int i = 0; i < g_CheatCommandsArgs.Length; i++)
+	{
 		g_CheatCommandsArgs.GetString(i, name, sizeof(name));
 		AddCommandListener(ListenerCheatCommandArgs, name);
-	}	
-	
+	}
+
 }
 
 void Disable(bool map_unload)
@@ -272,39 +272,39 @@ void Disable(bool map_unload)
 	if (!g_Enabled)
 		return;
 	g_Enabled = false;
-	
+
 	LogMessage("Disabling...");
-	
+
 #if LOADOUT_WHITELISTER
 	LoadoutWhitelister_End(map_unload);
 #endif
 
 	UnhookConVarChange(sv_cheats, OnCheatsChanged);
-	
+
 	UnhookEvent(PROXY_EVENT, ListenerVScript, EventHookMode_Pre);
-	
+
 	UnhookUserMessage(GetUserMessageId("VoiceSubtitle"), HookVoiceCommand, true);
-	
+
 	// OnPluginEnd will clear these automatically
 	if (map_unload)
 	{
 		char name[64];
 		for (int i = 0; i < g_CheatCommands.Length; i++)
 		{
-			g_CheatCommands.GetString(i, name, sizeof(name));	
-			RemoveCommandListener(ListenerCheatCommand, name);	
+			g_CheatCommands.GetString(i, name, sizeof(name));
+			RemoveCommandListener(ListenerCheatCommand, name);
 		}
-		
+
 		for (int i = 0; i < g_CheatCommandsArgs.Length; i++)
 		{
 			g_CheatCommandsArgs.GetString(i, name, sizeof(name));
-			RemoveCommandListener(ListenerCheatCommandArgs, name);	
-		}		
+			RemoveCommandListener(ListenerCheatCommandArgs, name);
+		}
 	}
-	
+
 	g_CheatCommands.Clear();
 	g_CheatCommandsArgs.Clear();
-	
+
 	host_timescale.SetFloat(1.0, true, false);
 	sv_cheats.SetInt(0, true, false);
 	vscript_perf_warning_spew_ms.SetFloat(g_ScriptPerfValue, false, false);
@@ -314,7 +314,7 @@ public void OnClientPutInServer(int client)
 {
 	if (!g_Enabled)
 		return;
-		
+
 #if LOADOUT_WHITELISTER
 	LoadoutWhitelister_InitClient(client);
 #endif
@@ -324,7 +324,7 @@ public void OnClientPostAdminCheck(int client)
 {
 	if (!g_Enabled)
 		return;
-	
+
 	// allow admins to use dev commands
 	if (CheckCommandAccess(client, "ware_admincheck", ADMFLAG_RCON))
 		SetEntProp(client, Prop_Data, "m_autoKickDisabled", 1);
@@ -344,15 +344,15 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 					{
 						char name[MAX_NAME_LENGTH];
 						GetClientName(client, name, sizeof(name));
-						LogMessage("Client '%s' attempted to execute cheat impulse '%d'", name, impulse);		
-					}					
-					impulse = 0;					
+						LogMessage("Client '%s' attempted to execute cheat impulse '%d'", name, impulse);
+					}
+					impulse = 0;
 					break;
 				}
 			}
 		}
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -363,7 +363,7 @@ public void OnPluginStart()
 	datacachesize = FindConVar("datacachesize");
 	if (datacachesize.IntValue < 512)
 		datacachesize.IntValue = 512;
-	
+
 	g_CheatCommands = new ArrayList(ByteCountToCells(64));
 	g_CheatCommandsArgs = new ArrayList(ByteCountToCells(64));
 	Enable();
@@ -377,7 +377,7 @@ public void OnPluginEnd()
 public void OnMapStart()
 {
 	Enable();
-	
+
 #if LOADOUT_WHITELISTER
 	LoadoutWhitelister_ReloadWhitelist();
 #endif
